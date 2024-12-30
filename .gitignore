@@ -1,0 +1,7 @@
+/Library
+/Logs
+/*.vsconfig
+/.vs/youtube/v15/*.suo
+/Packages
+/UserSettings
+/*.sln
