@@ -30,10 +30,11 @@ namespace YoutubeLib
 			[System.Serializable]
 			public struct LiveStreamingDetails
 			{
+				public string activeLiveChatId;
 				public string actualStartTime;
+				public string actualEndTime;
 				public string scheduledStartTime;
 				public string concurrentViewers;
-				public string activeLiveChatId;
 			};
 
 			/// <summary>PageInfo</summary>
@@ -132,10 +133,11 @@ namespace YoutubeLib
 						//ライブチャットＩＤ設定。
 						if((type&Type.SetLivechatId) > 0){
 							if(result.items.Length > 0){
-								work.livechatid = result.items[0].liveStreamingDetails.activeLiveChatId;
-								if(string.IsNullOrWhiteSpace(work.livechatid) == true){
+								if(string.IsNullOrWhiteSpace(result.items[0].liveStreamingDetails.activeLiveChatId) == true){
 									error = true;
 									work.livechatid = "";
+								}else{
+									work.livechatid = result.items[0].liveStreamingDetails.activeLiveChatId;
 								}
 							}else{
 								error = true;

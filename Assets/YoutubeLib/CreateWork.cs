@@ -15,6 +15,9 @@ namespace YoutubeLib
 				apikey = "",
 				videoid = "",
 				current = null,
+				livechatid = "",
+				livechatmessage = new LiveChatMessage(),
+				livechatpagetoken = "",
 			};
 		}
 	}

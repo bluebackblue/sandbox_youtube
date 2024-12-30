@@ -11,6 +11,10 @@ namespace YoutubeLib
 		public enum Type
 		{
 			Log = 1,
+			SetLiveChatMessage,
+			AddLiveChatMessage,
+			SetLiveChatMessagePageToken,
+			UseLiveChatMessagePageToken,
 		}
 
 		/// <summary>type</summary>
@@ -29,21 +33,37 @@ namespace YoutubeLib
 			[System.Serializable]
 			public struct Item
 			{
+				/// <summary>Snippet</summary>
 				[System.Serializable]
 				public struct Snippet
 				{
+					/// <summary>TextMessageDetails</summary>
 					[System.Serializable]
 					public struct TextMessageDetails
 					{
+						/// <summary>messageText</summary>
 						public string messageText;
 					}
 
+					/// <summary>type</summary>
 					public string type;
+
+					/// <summary>liveChatId</summary>
 					public string liveChatId;
+
+					/// <summary>authorChannelId</summary>
 					public string authorChannelId;
+
+					/// <summary>publishedAt</summary>
 					public string publishedAt;
+
+					/// <summary>hasDisplayContent</summary>
 					public bool hasDisplayContent;
+
+					/// <summary>displayMessage</summary>
 					public string displayMessage;
+
+					/// <summary>textMessageDetails</summary>
 					public TextMessageDetails textMessageDetails;
 				}
 
@@ -51,38 +71,77 @@ namespace YoutubeLib
 				[System.Serializable]
 				public struct AuthorDetails
 				{
+					/// <summary>channelId</summary>
 					public string channelId;
+
+					/// <summary>channelUrl</summary>
 					public string channelUrl;
+
+					/// <summary>displayName</summary>
 					public string displayName;
+
+					/// <summary>profileImageUrl</summary>
 					public string profileImageUrl;
+
+					/// <summary>isVerified</summary>
 					public bool isVerified;
+
+					/// <summary>isChatOwner</summary>
 					public bool isChatOwner;
+
+					/// <summary>isChatSponsor</summary>
 					public bool isChatSponsor;
+
+					/// <summary>isChatModerator</summary>
 					public bool isChatModerator;
 				}
 
+				/// <summary>kind</summary>
 				public string kind;
+
+				/// <summary>etag</summary>
 				public string etag;
+
+				/// <summary>id</summary>
 				public string id;
+
+				/// <summary>snippet</summary>
 				public Snippet snippet;
+
+				/// <summary>authorDetails</summary>
 				public AuthorDetails authorDetails;
 			}
-
 
 			/// <summary>PageInfo</summary>
 			[System.Serializable]
 			public struct PageInfo
 			{
+				/// <summary>totalResults</summary>
 				public string totalResults;
+
+				/// <summary>resultsPerPage</summary>
 				public string resultsPerPage;
 			}
 
+			/// <summary>kind</summary>
 			public string kind;
+
+			/// <summary>etag</summary>
 			public string etag;
+
+			/// <summary>id</summary>
 			public string id;
+
+			/// <summary>pollingIntervalMillis</summary>
 			public int pollingIntervalMillis;
+
+			/// <summary>nextPageToken</summary>
 			public string nextPageToken;
+
+			/// <summary>pageInfo</summary>
 			public PageInfo pageInfo;
+
+			/// <summary>items</summary>
 			public Item[] items;
 		}
 
@@ -102,14 +161,27 @@ namespace YoutubeLib
 			//unitywebrequest
 			unitywebrequest = new UnityEngine.Networking.UnityWebRequest();
 			unitywebrequest.downloadHandler = new UnityEngine.Networking.DownloadHandlerBuffer();
-			unitywebrequest.url = string.Format(
-				"{0}{1}?key={2}&liveChatId={3}&part={4}",
-				"https://www.googleapis.com/youtube/v3/",
-				"liveChat/messages",
-				work.apikey,
-				work.livechatid,
-				"id,snippet,authorDetails"
-			);
+
+			if((type&Type.UseLiveChatMessagePageToken) > 0){
+				unitywebrequest.url = string.Format(
+					"{0}{1}?key={2}&liveChatId={3}&part={4}&pageToken={5}",
+					"https://www.googleapis.com/youtube/v3/",
+					"liveChat/messages",
+					work.apikey,
+					work.livechatid,
+					"id,snippet,authorDetails",
+					work.livechatpagetoken
+				);
+			}else{
+				unitywebrequest.url = string.Format(
+					"{0}{1}?key={2}&liveChatId={3}&part={4}",
+					"https://www.googleapis.com/youtube/v3/",
+					"liveChat/messages",
+					work.apikey,
+					work.livechatid,
+					"id,snippet,authorDetails"
+				);
+			}
 			unitywebrequest.SendWebRequest();
 
 			//ログ。
@@ -125,10 +197,12 @@ namespace YoutubeLib
 				switch(unitywebrequest.result){
 				case UnityEngine.Networking.UnityWebRequest.Result.Success:
 					{
+						bool error = false;
+
 						string result_string = unitywebrequest.downloadHandler.text;
-						
 						Result result = UnityEngine.JsonUtility.FromJson<Result>(result_string);
 
+						//ログ。
 						if((type&Type.Log) > 0){
 							UnityEngine.Debug.Log(result_string);
 
@@ -167,13 +241,39 @@ namespace YoutubeLib
 							}
 						}
 
-						/*
-						if(result.items.Length > 0){
-							work.activelivechatid = result.items[0].liveStreamingDetails.activeLiveChatId;
+						//トークン設定。
+						if((type&Type.SetLiveChatMessagePageToken) > 0){
+							if(string.IsNullOrWhiteSpace(result.nextPageToken) == true){
+								error = true;
+								work.livechatpagetoken = "";
+							}else{
+								work.livechatpagetoken = result.nextPageToken;
+							}
 						}
-						*/
+
+						//クリア。
+						if((type&Type.SetLiveChatMessage) > 0){
+							work.livechatmessage.list.Clear();
+						}
+
+						//メッセージ追加。
+						if((type&(Type.SetLiveChatMessage|Type.AddLiveChatMessage)) > 0){
+							for(int ii=0;ii<result.items.Length;ii++){
+								ref Result.Item item = ref result.items[ii];
+								work.livechatmessage.list.Add(new LiveChatMessage.Item(){
+									snippet_displaymessage = item.snippet.displayMessage,
+									authordetails_displayname = item.authorDetails.displayName,
+									authordetails_channelurl = item.authorDetails.channelUrl,
+									authordetails_profileimageurl = item.authorDetails.profileImageUrl,
+								});
+							}
+						}
 
 						unitywebrequest.Dispose();
+
+						if(error == true){
+							return ActionResult.Error;
+						}
 					}return ActionResult.Success;
 				case UnityEngine.Networking.UnityWebRequest.Result.InProgress:
 					{

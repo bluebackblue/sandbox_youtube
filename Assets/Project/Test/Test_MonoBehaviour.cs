@@ -1,8 +1,8 @@
 
 
 
-/// <summary>Project</summary>
-namespace Project
+/// <summary>Project.Test</summary>
+namespace Project.Test
 {
 	/// <summary>Test_MonoBehaviour</summary>
 	[System.Serializable]

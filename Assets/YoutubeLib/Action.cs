@@ -29,6 +29,8 @@ namespace YoutubeLib
 					}break;
 				case ActionResult.Error:
 					{
+						UnityEngine.Debug.LogErrorFormat("error : {0}",work.current.GetType());
+
 						work.current = null;
 						work.actionlist.Clear();
 					}break;
